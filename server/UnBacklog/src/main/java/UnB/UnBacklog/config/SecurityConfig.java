@@ -43,21 +43,24 @@ public class SecurityConfig {
     private Resource publicKeyResource;
 
 @Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.cors(cors -> cors.configurationSource(request -> {
-        var corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:3000")); // frontend
-        corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-        corsConfig.setAllowCredentials(true); // ESSENCIAL para cookies
-        corsConfig.setAllowedHeaders(List.of("*"));
-        return corsConfig;
-    }))
-    .csrf(csrf -> csrf.disable())
-    .authorizeHttpRequests(authz -> authz
-        .requestMatchers("/api/auth/**").permitAll()
-        .anyRequest().authenticated()
-    )
-    .oauth2ResourceServer(oauth -> oauth.jwt());
+public SecurityFilterChain securityFilterChain(HttpSecurity http,
+    JwtCookieAuthenticationFilter jwtCookieFilter) throws Exception {
+    http
+        .cors(cors -> cors.configurationSource(request -> {
+            var corsConfig = new CorsConfiguration();
+            corsConfig.setAllowedOrigins(List.of("http://localhost:5173"));
+            corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+            corsConfig.setAllowCredentials(true);
+            corsConfig.setAllowedHeaders(List.of("*"));
+            return corsConfig;
+        }))
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(authz -> authz
+            .requestMatchers("/api/auth/**").permitAll()
+            .anyRequest().authenticated()
+        )
+        .addFilterBefore(jwtCookieFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+
     return http.build();
 }
 

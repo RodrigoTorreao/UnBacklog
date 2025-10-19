@@ -37,19 +37,17 @@ public class TokenController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         try {
-            // gera o token via AuthService
             String jwtToken = authService.login(loginRequest.email(), loginRequest.password());
 
-            // Cria cookie httpOnly
+
             Cookie cookie = new Cookie("token", jwtToken);
-            cookie.setHttpOnly(true);       // protege contra acesso via JS
-            cookie.setSecure(false);        // true se estiver em HTTPS
-            cookie.setPath("/");            // válido para todas as rotas
-            cookie.setMaxAge(60 * 60);      // expira em 1 hora
+            cookie.setHttpOnly(true);      
+            cookie.setSecure(false);       
+            cookie.setPath("/");           
+            cookie.setMaxAge(60 * 60);      
 
-            response.addCookie(cookie);     // adiciona cookie à resposta
+            response.addCookie(cookie); 
 
-            // Retorna apenas mensagem de sucesso
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -63,7 +61,6 @@ public class TokenController {
         try {
             String jwtToken = authService.register(registerRequest.email(), registerRequest.password(), registerRequest.name());
 
-            // Cria cookie httpOnly
             Cookie cookie = new Cookie("token", jwtToken);
             cookie.setHttpOnly(true);
             cookie.setSecure(false);

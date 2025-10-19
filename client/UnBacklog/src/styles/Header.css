@@ -1,0 +1,49 @@
+/* Header container */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #e6f4ed;
+  height: 6rem; /* altura fixa */
+  box-sizing: border-box;
+}
+
+/* Container do logo + título */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* espaçamento entre logo e título */
+  padding-left: 35px;
+}
+
+/* Logo */
+.header-logo {
+  object-fit: contain; /* mantém proporção */
+  display: block;
+}
+
+/* Título */
+.header-title {
+  font-size: 2rem;  /* aumenta tamanho do texto */
+  font-weight: 800;
+  color: #0c1d14;
+  margin: 0;
+  font-family: 'Inter', sans-serif
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 1.5rem;
+    height: 5rem;
+  }
+
+  .header-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .header-title {
+    font-size: 1.5rem;
+  }
+}
