@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-UnBacklogApplication<UnBacklog>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "UnB.UnBacklog.UnBacklogApplication",
+            "projectName": "UnBacklog",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

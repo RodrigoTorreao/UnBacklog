@@ -21,8 +21,7 @@ public class UserController {
     public record ErrorResponse(String message) {}
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMe(@CookieValue(name = "token", required = false) String token, 
-                                 HttpServletResponse response) {
+    public ResponseEntity<?> getMe(@CookieValue(name = "token", required = false) String token, HttpServletResponse response) {
         try{    
             if (token == null || token.isEmpty()) {
                 return ResponseEntity.badRequest()
