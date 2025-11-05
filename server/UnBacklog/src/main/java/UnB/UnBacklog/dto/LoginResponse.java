@@ -1,4 +1,4 @@
-package UnB.UnBacklog.controller.dto;
+package UnB.UnBacklog.dto;
 
 public record LoginResponse(String accessToken) {
 }

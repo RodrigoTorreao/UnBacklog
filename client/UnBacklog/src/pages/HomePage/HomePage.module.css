@@ -1,0 +1,25 @@
+.main{
+    display: flex;
+    flex-direction: column; /* organiza título e tabela verticalmente */
+    padding: 40px; /* opcional, para dar espaçamento */
+    gap: 16px; /* espaço entre título e tabela */
+
+}   
+
+.title{
+    display: flex;
+    justify-content: space-between; /* título à esquerda, botão à direita */
+    align-items: center; /* alinha verticalmente */
+    width: 100%; /* importante para alinhar com a tabela */
+    padding: 8px; /* opcional */
+} 
+
+.title p {
+    color: #0c1d14;          /* text-[#0c1d14] */
+    font-weight: bold;        /* font-bold */
+    font-size: 32px;          /* text-[32px] */
+    letter-spacing: 0.02em;   /* tracking-light, ajuste conforme necessidade */
+    line-height: 1.25;        /* leading-tight */
+    min-width: 18rem;         /* min-w-72 (72*0.25rem = 18rem) */
+    margin: 0;                /* remove margin padrão do <p> */
+}

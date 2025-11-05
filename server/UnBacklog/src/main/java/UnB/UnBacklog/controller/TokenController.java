@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.web.bind.annotation.RestController;
 
-import UnB.UnBacklog.controller.dto.LoginRequest;
-import UnB.UnBacklog.controller.dto.LoginResponse;
+import UnB.UnBacklog.dto.LoginRequest;
+import UnB.UnBacklog.dto.LoginResponse;
 import UnB.UnBacklog.service.AuthService;
 
 import org.springframework.web.bind.annotation.PostMapping;
