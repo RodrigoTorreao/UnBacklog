@@ -2,6 +2,8 @@ package UnB.UnBacklog.entities;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import UnB.UnBacklog.util.UserStoryPriority;
 import UnB.UnBacklog.util.UserStoryStatus;
 import jakarta.persistence.Column;
@@ -39,6 +41,7 @@ public class UserStory {
     private Sprint sprint;
     
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "project_id")
     private Project project;
 

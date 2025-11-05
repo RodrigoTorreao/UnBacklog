@@ -40,11 +40,9 @@ public class Project {
     private List<ProjectUser> projectUsers = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<UserStory> userStories = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<Sprint> sprints = new ArrayList<>();
 
     // Getters e setters

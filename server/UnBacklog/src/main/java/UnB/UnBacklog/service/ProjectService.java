@@ -13,19 +13,24 @@ import UnB.UnBacklog.dto.ProjectUserDTO;
 import UnB.UnBacklog.entities.Project;
 import UnB.UnBacklog.entities.ProjectUser;
 import UnB.UnBacklog.entities.User;
+import UnB.UnBacklog.entities.UserStory;
 import UnB.UnBacklog.repository.ProjectRepository;
 import UnB.UnBacklog.repository.UserRepository;
+import UnB.UnBacklog.repository.UserStoryRepository;
 import UnB.UnBacklog.service.ProjectService.ProjectResponse;
 import UnB.UnBacklog.service.ProjectService.UserSummary;
 import UnB.UnBacklog.util.ProjectRole;
+import UnB.UnBacklog.util.UserStoryPriority;
+import UnB.UnBacklog.util.UserStoryStatus;
 import UnB.UnBacklog.util.Utils;
 
 @Service
 public class ProjectService {
-    
-    ProjectRepository projectRepository;
-    UserRepository userRepository;
-    Utils utils; 
+
+    private UserStoryRepository userStoryRepository;
+    private ProjectRepository projectRepository;
+    private UserRepository userRepository;
+    private Utils utils; 
 
     public record ProjectResponse(
     UUID id,
@@ -41,10 +46,11 @@ public class ProjectService {
         ProjectRole role
     ) {}
 
-    public ProjectService(ProjectRepository projectRepository, Utils utils, UserRepository userRepository){
+    public ProjectService(ProjectRepository projectRepository, Utils utils, UserRepository userRepository, UserStoryRepository userStoryRepository){
         this.projectRepository = projectRepository;
         this.utils = utils;
         this.userRepository = userRepository; 
+        this.userStoryRepository = userStoryRepository;
     }
 
     public List<ProjectResponse> getProjects(String token){
@@ -95,5 +101,44 @@ public class ProjectService {
             project.getProjectUsers().add(associateRelation);
         }
         projectRepository.save(project);
+    }
+
+    public String createUserStory(String token, String title, String description, UserStoryPriority priority, UserStoryStatus status, String projectId) throws Exception{
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        Project project = projectRepository.findById(projectUUID)
+            .orElseThrow(() -> new BadCredentialsException("Project not found")); 
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        System.out.println(projectUsers);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream().filter(projecUser -> projecUser.getUserId().equals(userId)).findFirst(); 
+
+        if(foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER){
+            throw new Exception("Only Product Owners can create user stories");
+
+        }
+
+        UserStory userStory = new UserStory();
+        userStory.setTitle(title);
+        userStory.setDescription(description);
+        userStory.setPriority(priority);
+        userStory.setProject(project);
+        userStory.setStatus(status);
+        UserStory savedUsedStory = userStoryRepository.save(userStory); 
+
+        return savedUsedStory.getId().toString();
+    }
+
+    public List<UserStory> getUserStory(String token, String projectId) throws Exception{
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        Project project = projectRepository.findById(projectUUID)
+            .orElseThrow(() -> new BadCredentialsException("Project not found"));
+        boolean hasUser = project.getProjectUsers().stream().anyMatch(projectUser -> projectUser.getUser().getUserId().equals(userId));
+        System.out.println(hasUser);
+        if(!hasUser){
+            throw new Exception("Not allowed");
+        }
+        return project.getUserStories(); 
     }
 }
