@@ -37,6 +37,7 @@ public class ProjectService {
     public record UserSummary(
         String name,
         String email,
+        UUID userId,
         ProjectRole role
     ) {}
 
@@ -53,7 +54,7 @@ public class ProjectService {
             List<UserSummary> users = project.getProjectUsers().stream()
                 .map(projectUser -> {
                     User user = projectUser.getUser();
-                    return new UserSummary(user.getName(), user.getEmail(),projectUser.getRole());
+                    return new UserSummary(user.getName(), user.getEmail(), user.getUserId(), projectUser.getRole());
                 })
                 .toList();
 

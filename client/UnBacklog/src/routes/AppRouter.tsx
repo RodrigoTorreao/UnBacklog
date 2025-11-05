@@ -3,6 +3,8 @@ import { PrivateRoute } from "./PrivateRoute";
 
 import LoginPage from "../pages/LoginPage/LoginPage"
 import RegisterPage from "../pages/RegisterPage/RegisterPage"
+import HomePage from "../pages/HomePage/HomePage";
+import NewProject from "../pages/NewProjectPage/NewProject";
 
 export const AppRouter = () => (
   <BrowserRouter>
@@ -14,8 +16,15 @@ export const AppRouter = () => (
         path="/"
         element={
           <PrivateRoute>
-            < >
-            </>
+            <HomePage/>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/new-project"
+        element={
+          <PrivateRoute>
+            <NewProject/>
           </PrivateRoute>
         }
       />

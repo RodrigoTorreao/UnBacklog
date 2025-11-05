@@ -48,7 +48,10 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http,
     http
         .cors(cors -> cors.configurationSource(request -> {
             var corsConfig = new CorsConfiguration();
-            corsConfig.setAllowedOrigins(List.of("http://localhost:5173"));
+            corsConfig.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:5174"
+            ));
             corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
             corsConfig.setAllowCredentials(true);
             corsConfig.setAllowedHeaders(List.of("*"));
