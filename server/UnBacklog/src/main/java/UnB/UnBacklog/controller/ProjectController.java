@@ -12,8 +12,11 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,9 +34,8 @@ public class ProjectController {
     public record ErrorResponse(String message) {}
     public record Associate(String email, ProjectRole role){}
     public record CreateRequest(String name, String description, List<Associate> associates){}
-    public record CreateUserStory(String title, String description, UserStoryPriority priority, UserStoryStatus status, String projectId){}
-    public record GetUserStory(String projectId){}
-
+    public record CreateUserStory(String title, String description, UserStoryPriority priority, UserStoryStatus status){}
+    public record UpdateUserStory(String title, String description, UserStoryPriority priority, UserStoryStatus status){}
 
     @GetMapping()
     public ResponseEntity<?> getProjects(@CookieValue(name = "token", required = false) String token, HttpServletResponse response) {
@@ -59,12 +61,12 @@ public class ProjectController {
         }
     }
 
-    @PostMapping("/user-story")
+    @PostMapping("{projectId}/user-story")
     public ResponseEntity<?> createUserStory(@CookieValue(name = "token", required = false) String token,
-     @RequestBody CreateUserStory createUserStory, HttpServletResponse response) {
+    @PathVariable String projectId,  @RequestBody CreateUserStory createUserStory, HttpServletResponse response) {
         try {
             return ResponseEntity.ok(
-                projectService.createUserStory(token, createUserStory.title, createUserStory.description, createUserStory.priority, createUserStory.status, createUserStory.projectId)
+                projectService.createUserStory(token, createUserStory.title, createUserStory.description, createUserStory.priority, createUserStory.status, projectId)
             );
         } 
         catch (Exception e) {
@@ -72,13 +74,53 @@ public class ProjectController {
         }
     }
 
-    @GetMapping("/user-story")
-    public ResponseEntity<?> createUserStory(@CookieValue(name = "token", required = false) String token,
-     @RequestBody GetUserStory getUserStory, HttpServletResponse response) {
+    @GetMapping("{projectId}/user-story")
+    public ResponseEntity<?> getUserStory(@CookieValue(name = "token", required = false) String token,
+     @PathVariable String projectId,HttpServletResponse response) {
         try {
             return ResponseEntity.ok(
-                projectService.getUserStory(token, getUserStory.projectId)
+                projectService.getUserStory(token, projectId)
             );
+        } 
+        catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PutMapping("{projectId}/user-story/{userStoryId}")
+    public ResponseEntity<?> updateUserStory(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String projectId, 
+        @PathVariable String userStoryId,
+        @RequestBody UpdateUserStory updateUserStory, 
+        HttpServletResponse response) {
+        try {
+            return ResponseEntity.ok(
+                projectService.updateUserStory(
+                    token, 
+                    projectId, 
+                    userStoryId,
+                    updateUserStory.title, 
+                    updateUserStory.description, 
+                    updateUserStory.priority, 
+                    updateUserStory.status 
+                    )
+            );
+        } 
+        catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("{projectId}/user-story/{userStoryId}")
+    public ResponseEntity<?> deleteUserStory(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String projectId, 
+        @PathVariable String userStoryId,
+        HttpServletResponse response) {
+        try {
+            projectService.deleteUserStory(token, projectId, userStoryId);
+            return ResponseEntity.ok().build();
         } 
         catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));

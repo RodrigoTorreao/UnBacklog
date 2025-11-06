@@ -110,7 +110,6 @@ public class ProjectService {
             .orElseThrow(() -> new BadCredentialsException("Project not found")); 
 
         List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
-        System.out.println(projectUsers);
         Optional<ProjectUserDTO> foundUser = projectUsers.stream().filter(projecUser -> projecUser.getUserId().equals(userId)).findFirst(); 
 
         if(foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER){
@@ -141,4 +140,64 @@ public class ProjectService {
         }
         return project.getUserStories(); 
     }
-}
+    public UserStory updateUserStory(
+        String token, 
+        String projectId, 
+        String userStoryId,
+        String title, 
+        String description, 
+        UserStoryPriority priority, 
+        UserStoryStatus status
+    ) throws Exception {
+
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        UUID userStoryUUID = UUID.fromString(userStoryId);
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(projectUser -> projectUser.getUserId().equals(userId))
+            .findFirst(); 
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Product Owners can update user stories");
+        }
+        UserStory userStory = userStoryRepository.findById(userStoryUUID)
+            .orElseThrow(() -> new BadCredentialsException("User Story not found"));
+
+        if (!userStory.getProject().getProjectId().equals(projectUUID)) {
+            throw new Exception("User Story does not belong to this project");
+        }
+
+        if (title != null) userStory.setTitle(title);
+        if (description != null) userStory.setDescription(description);
+        if (priority != null) userStory.setPriority(priority);
+        if (status != null) userStory.setStatus(status);
+
+        return userStoryRepository.save(userStory);
+    }
+
+    public void deleteUserStory(String token, String projectId, String userStoryId) throws Exception{
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        UUID userStoryUUID = UUID.fromString(userStoryId);
+        
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(projectUser -> projectUser.getUserId().equals(userId))
+            .findFirst(); 
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Product Owners can update user stories");
+        }
+        UserStory userStory = userStoryRepository.findById(userStoryUUID)
+            .orElseThrow(() -> new BadCredentialsException("User Story not found"));
+
+        if (!userStory.getProject().getProjectId().equals(projectUUID)) {
+            throw new Exception("User Story does not belong to this project");
+        }
+
+        userStoryRepository.delete(userStory);
+
+    }
+}   
