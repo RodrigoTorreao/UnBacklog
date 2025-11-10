@@ -218,7 +218,7 @@ const NewProject: React.FC = () => {
             <Button
                 onClick={() =>{
                     if(email && role){
-                        setAssociates(prevArray => [...prevArray, {email: email, role: role}]); 
+                        setAssociates(prevArray => [...prevArray, {email: email, role: role, name:"", userId: ""}]); 
                         setEmail(""); 
                         setRole(''); 
                     }

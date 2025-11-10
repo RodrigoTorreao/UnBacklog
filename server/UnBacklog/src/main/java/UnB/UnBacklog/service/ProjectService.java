@@ -134,7 +134,6 @@ public class ProjectService {
         Project project = projectRepository.findById(projectUUID)
             .orElseThrow(() -> new BadCredentialsException("Project not found"));
         boolean hasUser = project.getProjectUsers().stream().anyMatch(projectUser -> projectUser.getUser().getUserId().equals(userId));
-        System.out.println(hasUser);
         if(!hasUser){
             throw new Exception("Not allowed");
         }
