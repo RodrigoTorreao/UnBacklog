@@ -5,9 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import UnB.UnBacklog.util.SprintStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,6 +32,7 @@ public class Sprint {
 
     @ManyToOne
     @JoinColumn(name = "project_id")
+    @JsonIgnore
     private Project project;
 
     private String objective; 
@@ -40,6 +46,9 @@ public class Sprint {
 
     @OneToMany(mappedBy = "sprint", cascade = CascadeType.ALL)
     private List<UserStory> userStories = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    private SprintStatus status;
     
     public UUID getSprintId() {
         return sprintId;
@@ -95,6 +104,14 @@ public class Sprint {
 
     public void setUserStories(List<UserStory> userStories) {
         this.userStories = userStories;
+    }
+
+    public SprintStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(SprintStatus status) {
+        this.status = status;
     } 
 
     

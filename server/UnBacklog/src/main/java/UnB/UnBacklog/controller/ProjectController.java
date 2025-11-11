@@ -4,10 +4,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import UnB.UnBacklog.service.ProjectService;
 import UnB.UnBacklog.util.ProjectRole;
+import UnB.UnBacklog.util.SprintStatus;
 import UnB.UnBacklog.util.UserStoryPriority;
 import UnB.UnBacklog.util.UserStoryStatus;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -36,6 +39,7 @@ public class ProjectController {
     public record CreateRequest(String name, String description, List<Associate> associates){}
     public record CreateUserStory(String title, String description, UserStoryPriority priority, UserStoryStatus status){}
     public record UpdateUserStory(String title, String description, UserStoryPriority priority, UserStoryStatus status){}
+    public record CreateSprint(String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status ){}
 
     @GetMapping()
     public ResponseEntity<?> getProjects(@CookieValue(name = "token", required = false) String token, HttpServletResponse response) {
@@ -126,5 +130,21 @@ public class ProjectController {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
+
+    @PostMapping("{projectId}/sprint")
+    public ResponseEntity<?> createSprint(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String projectId,    
+        @RequestBody CreateSprint sprint
+        ) {
+        try {
+            return ResponseEntity.ok(
+                projectService.createSprint(token, projectId, sprint.objective(), sprint.startDate(), sprint.finishDate(), sprint.status())
+            );
+        } catch (Exception e) {
+           return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
     
+
 }
