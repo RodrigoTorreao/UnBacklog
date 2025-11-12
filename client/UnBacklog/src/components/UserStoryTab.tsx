@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useContext } from "react";
 import { useProject } from "../context/ProjectContext";
+import { AuthContext } from "../context/AuthContext";
 import { type ProjectType, UserStoryStatus, UserStoryPriority, type UserStory} from "../types/types";
 import {
   Button,
@@ -16,16 +17,34 @@ import {
   MenuItem,
 } from "@mui/material";
 import CreateUserStoryModal from "./CreateUserStoryModal";
+import EditUserStoryModal from "./EditUserStoryModal";
 import { createUserStory, deleteUserStoryApi } from "../api/projectApi";
 
 const UserStoryTab: React.FC = () => {
-  const { project, addUserStory, deleteUserStory } = useProject();
+  const { project, addUserStory, deleteUserStory, updateUserStory } = useProject();
+  const { user } = useContext(AuthContext);
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [assignee, setAssignee] = useState("");
   const [openModal, setOpenModal] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUserStory, setEditingUserStory] = useState<UserStory | null>(null);
 
-  const handleEdit = (storyId: string) => console.log("Editar", storyId);
+  // Verifica se o usuário logado é Product Owner neste projeto
+  const isProductOwner = project.associates?.some(
+    associate => 
+      associate.email === user?.email && 
+      associate.role === "PRODUCT_OWNER"
+  );
+
+  const handleEdit = (storyId: string) => {
+    const story = project.userStories?.find(s => s.id === storyId);
+    if (story) {
+      setEditingUserStory(story);
+      setEditModalOpen(true);
+    }
+  };
+
   const handleDelete = async (storyId: string) => {
     try {
       if(!project.id){
@@ -39,6 +58,10 @@ const UserStoryTab: React.FC = () => {
       console.log(error)
     }
   }
+
+  const handleUpdateUserStory = (updatedStory: UserStory) => {
+    updateUserStory(updatedStory);
+  };
 
   const filteredStories = useMemo(() => {
     if (!project?.userStories) return [];
@@ -132,6 +155,12 @@ const UserStoryTab: React.FC = () => {
     }
   };
 
+  const getSprintDisplay = (sprintId?: string) => {
+    if (!sprintId) return "-";
+    const sprint = project.sprints?.find(s => s.id === sprintId);
+    return sprint ? `#${sprint.id?.substring(0, 8)}...` : "-";
+  };
+
   return (
     <div style={{ fontFamily: 'Inter, "Noto Sans", sans-serif' }}>
       <h2 style={{ marginBottom: "30px" }}>Histórias de Usuário:</h2>
@@ -168,16 +197,17 @@ const UserStoryTab: React.FC = () => {
           </Select>
         </FormControl>
 
-        <Button style={{color: "#f8fcfa", marginLeft: "auto", width: "20em", height: "4em", backgroundColor: "#006633", borderRadius: "12px"}}
-          onClick={() =>{setOpenModal(true)}}
-        >
-          Nova História de Usuário
-        </Button>
+        {isProductOwner && (
+          <Button style={{color: "#f8fcfa", marginLeft: "auto", width: "20em", height: "4em", backgroundColor: "#006633", borderRadius: "12px"}}
+            onClick={() =>{setOpenModal(true)}}
+          >
+            Nova História de Usuário
+          </Button>
+        )}
         <CreateUserStoryModal
           open={openModal}
           onClose={() => setOpenModal(false)}
           onSubmit={handleNewUserStory}
-        
         />
       </div>
 
@@ -248,41 +278,45 @@ const UserStoryTab: React.FC = () => {
                     </span>
                   </TableCell>
 
-                  <TableCell>{story.sprint || "-"}</TableCell>
+                  <TableCell>{getSprintDisplay(story.sprint)}</TableCell>
 
                   <TableCell>
                     <div style={{ display: "flex", gap: "0.5em" }}>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleEdit(story.id?.toString() ?? "")}
-                        sx={{
-                          textTransform: "none",
-                          color: "#006633",
-                          borderColor: "#006633",
-                          "&:hover": {
-                            backgroundColor: "rgba(0, 102, 51, 0.1)",
-                          },
-                        }}
-                      >
-                        Editar
-                      </Button>
+                      {isProductOwner && (
+                        <>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleEdit(story.id?.toString() ?? "")}
+                            sx={{
+                              textTransform: "none",
+                              color: "#006633",
+                              borderColor: "#006633",
+                              "&:hover": {
+                                backgroundColor: "rgba(0, 102, 51, 0.1)",
+                              },
+                            }}
+                          >
+                            Editar
+                          </Button>
 
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleDelete(story.id?.toString() ?? "")}
-                        sx={{
-                          textTransform: "none",
-                          color: "#cc0000",
-                          borderColor: "#cc0000",
-                          "&:hover": {
-                            backgroundColor: "rgba(204, 0, 0, 0.1)",
-                          },
-                        }}
-                      >
-                        Excluir
-                      </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleDelete(story.id?.toString() ?? "")}
+                            sx={{
+                              textTransform: "none",
+                              color: "#cc0000",
+                              borderColor: "#cc0000",
+                              "&:hover": {
+                                backgroundColor: "rgba(204, 0, 0, 0.1)",
+                              },
+                            }}
+                          >
+                            Excluir
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -297,6 +331,16 @@ const UserStoryTab: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Modal de edição */}
+      <EditUserStoryModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        userStory={editingUserStory}
+        projectId={project.id!}
+        sprints={project.sprints || []}
+        onUpdate={handleUpdateUserStory}
+      />
     </div>
   );
 };

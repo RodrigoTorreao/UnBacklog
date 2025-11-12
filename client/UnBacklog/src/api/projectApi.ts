@@ -44,3 +44,7 @@ export const updateSprint = (projectId: string, sprintId: string, body: Partial<
 export const deleteSprint = (projectId: string, sprintId: string) => {
   return api.delete(`/project/${projectId}/sprint/${sprintId}`);
 };
+
+export const updateUserStory = (projectId: string, userStoryId: string, body: Partial<UserStory> & { sprintId?: string }) => {
+  return api.put(`/project/${projectId}/user-story/${userStoryId}`, body);
+};

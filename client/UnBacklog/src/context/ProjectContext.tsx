@@ -10,6 +10,7 @@ interface ProjectContextType {
   updateSprints: (sprints: Sprint[]) => void;
   addSprint: (sprint: Sprint) => void;
   deleteSprint: (sprintId: string) => void;
+  updateUserStory:(userStory: UserStory) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -39,6 +40,15 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       userStories: prev.userStories?.filter(story => story.id !== storyId) || [],
     }));
   }, []);
+
+  const updateUserStory = useCallback((updatedStory: UserStory) => {
+  setProject(prev => ({
+    ...prev,
+    userStories: prev.userStories?.map(story => 
+      story.id === updatedStory.id ? updatedStory : story
+    ) || [],
+  }));
+}, []);
 
   // --- Sprints ---
   const updateSprints = useCallback((sprints: Sprint[]) => {
@@ -70,6 +80,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateSprints,
         addSprint,
         deleteSprint,
+        updateUserStory
       }}
     >
       {children}
