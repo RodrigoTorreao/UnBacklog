@@ -62,7 +62,7 @@ public class ProjectController {
 
         } 
         catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

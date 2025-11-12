@@ -1,5 +1,5 @@
 import api from "./api";
-import { roleMap, type Associates, UserStoryPriority, UserStoryStatus, type UserStory} from "../types/types";
+import { roleMap, type Associates, UserStoryPriority, UserStoryStatus, type UserStory, type Sprint} from "../types/types";
 
 interface createProjectBody { 
     name: string,
@@ -28,3 +28,11 @@ export const createUserStory = (projecId: string, body: UserStory) => {
 export const deleteUserStoryApi = (projecId: string, userStoryId: string) => {
     return api.delete(`/project/${projecId}/user-story/${userStoryId}`);
 }
+
+export const getSprints = (projectId: string) => {
+  return api.get(`/project/${projectId}/sprint`);
+};
+
+export const createSprint = (projectId: string, body: Sprint) => {
+  return api.post(`/project/${projectId}/sprint`, body);
+};

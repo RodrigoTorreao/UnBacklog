@@ -287,7 +287,6 @@ public class ProjectService {
         if (foundUser.isEmpty()) {
             throw new Exception("User not part of project");
         }
-
         return project.getSprints(); 
 
     }
