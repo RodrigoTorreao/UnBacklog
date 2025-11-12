@@ -88,7 +88,7 @@ const SprintsTab: React.FC = () => {
       {/* Modal para criar nova sprint */}
       <CreateSprintModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={() => setOpenModal(false)} 
         projectId={project.id!}
       />
     </div>

@@ -36,3 +36,11 @@ export const getSprints = (projectId: string) => {
 export const createSprint = (projectId: string, body: Sprint) => {
   return api.post(`/project/${projectId}/sprint`, body);
 };
+
+export const updateSprint = (projectId: string, sprintId: string, body: Partial<Sprint>) => {
+  return api.put(`/project/${projectId}/sprint/${sprintId}`, body);
+};
+
+export const deleteSprint = (projectId: string, sprintId: string) => {
+  return api.delete(`/project/${projectId}/sprint/${sprintId}`);
+};
