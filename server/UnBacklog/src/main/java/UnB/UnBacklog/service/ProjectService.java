@@ -14,28 +14,32 @@ import UnB.UnBacklog.dto.ProjectUserDTO;
 import UnB.UnBacklog.entities.Project;
 import UnB.UnBacklog.entities.ProjectUser;
 import UnB.UnBacklog.entities.Sprint;
+import UnB.UnBacklog.entities.Task;
 import UnB.UnBacklog.entities.User;
 import UnB.UnBacklog.entities.UserStory;
 import UnB.UnBacklog.repository.ProjectRepository;
 import UnB.UnBacklog.repository.SprintRepository;
+import UnB.UnBacklog.repository.TaskRepository;
 import UnB.UnBacklog.repository.UserRepository;
 import UnB.UnBacklog.repository.UserStoryRepository;
 import UnB.UnBacklog.service.ProjectService.ProjectResponse;
 import UnB.UnBacklog.service.ProjectService.UserSummary;
 import UnB.UnBacklog.util.ProjectRole;
 import UnB.UnBacklog.util.SprintStatus;
+import UnB.UnBacklog.util.TaskPriority;
+import UnB.UnBacklog.util.TaskStatus;
 import UnB.UnBacklog.util.UserStoryPriority;
 import UnB.UnBacklog.util.UserStoryStatus;
 import UnB.UnBacklog.util.Utils;
 
 @Service
 public class ProjectService {
-
     private UserStoryRepository userStoryRepository;
     private ProjectRepository projectRepository;
     private UserRepository userRepository;
     private Utils utils; 
     private SprintRepository sprintRepository; 
+    private TaskRepository taskRepository;
 
     public record ProjectResponse(
     UUID id,
@@ -51,12 +55,13 @@ public class ProjectService {
         ProjectRole role
     ) {}
 
-    public ProjectService(ProjectRepository projectRepository, Utils utils, UserRepository userRepository, UserStoryRepository userStoryRepository, SprintRepository sprintRepository){
+    public ProjectService(ProjectRepository projectRepository, Utils utils, UserRepository userRepository, UserStoryRepository userStoryRepository, SprintRepository sprintRepository, TaskRepository taskRepository){
         this.projectRepository = projectRepository;
         this.utils = utils;
         this.userRepository = userRepository; 
         this.userStoryRepository = userStoryRepository;
         this.sprintRepository = sprintRepository; 
+        this.taskRepository = taskRepository;
     }
 
     public List<ProjectResponse> getProjects(String token){
@@ -372,5 +377,85 @@ public class ProjectService {
         }
 
         sprintRepository.delete(sprint);
+    }
+
+    public List<Task> getTasks(String token, String sprintId) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID sprintUUID = UUID.fromString(sprintId);
+        Sprint sprint = sprintRepository.findById(sprintUUID)
+            .orElseThrow(() -> new BadCredentialsException("Sprint not found"));
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(sprint.getProject().getProjectId());
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+        
+            if (foundUser.isEmpty()) {
+            throw new Exception("User not part of project");
+        }
+
+        return sprint.getTasks(); 
+    }
+
+    public Task createTask(
+        String token,
+        String sprintId,
+        String title,
+        String description,
+        TaskStatus status,
+        TaskPriority priority,
+        String userStoryId,
+        String responsableId
+    ) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID sprintUUID = UUID.fromString(sprintId);
+        
+        Sprint sprint = sprintRepository.findById(sprintUUID)
+            .orElseThrow(() -> new BadCredentialsException("Sprint not found"));
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(sprint.getProject().getProjectId());
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Product Owners can create tasks");
+        }
+
+        Task task = new Task();
+        task.setTitle(title);
+        task.setDescription(description);
+        task.setStatus(status);
+        task.setPriority(priority);
+        task.setSprint(sprint);
+        task.setCreatedAt(LocalDateTime.now());
+        task.setUserStory(null);
+
+        UUID userStoryUUID = UUID.fromString(userStoryId);
+        UserStory userStory = userStoryRepository.findById(userStoryUUID)
+            .orElseThrow(() -> new BadCredentialsException("User Story not found"));
+            
+        if (!userStory.getProject().getProjectId().equals(sprint.getProject().getProjectId())) {
+            throw new Exception("User Story does not belong to the same project");
+        }
+            
+        task.setUserStory(userStory);
+        
+        if (responsableId != null && !responsableId.isEmpty()) {
+            UUID responsableUUID = UUID.fromString(responsableId);
+            User responsable = userRepository.findById(responsableUUID)
+                .orElseThrow(() -> new BadCredentialsException("Responsable not found"));
+            
+            boolean isResponsableInProject = projectUsers.stream()
+                .anyMatch(p -> p.getUserId().equals(responsableUUID));
+            
+            if (!isResponsableInProject) {
+                throw new Exception("Responsable is not a member of the project");
+            }
+            
+            task.setResponsable(responsable);
+        }
+        
+        return taskRepository.save(task);
     }
 }   

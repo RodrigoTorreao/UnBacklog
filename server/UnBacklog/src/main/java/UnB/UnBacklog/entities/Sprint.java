@@ -49,6 +49,9 @@ public class Sprint {
 
     @Enumerated(EnumType.STRING)
     private SprintStatus status;
+
+    @OneToMany(mappedBy = "sprint", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> tasks = new ArrayList<>();
     
     public UUID getSprintId() {
         return sprintId;
@@ -112,6 +115,14 @@ public class Sprint {
 
     public void setStatus(SprintStatus status) {
         this.status = status;
+    }
+
+    public List<Task> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(List<Task> tasks) {
+        this.tasks = tasks;
     } 
 
     

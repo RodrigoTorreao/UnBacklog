@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 import UnB.UnBacklog.service.ProjectService;
 import UnB.UnBacklog.util.ProjectRole;
 import UnB.UnBacklog.util.SprintStatus;
+import UnB.UnBacklog.util.TaskPriority;
+import UnB.UnBacklog.util.TaskStatus;
 import UnB.UnBacklog.util.UserStoryPriority;
 import UnB.UnBacklog.util.UserStoryStatus;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,6 +43,7 @@ public class ProjectController {
     public record UpdateUserStory(String title, String description, UserStoryPriority priority, UserStoryStatus status, String sprintId){}
     public record CreateSprint(String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status ){}
     public record UpdateSprint( String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status) {}
+    public record CreateTask(String title,String description,TaskStatus status,TaskPriority priority, String userStoryId, String responsableId) {}
 
     @GetMapping()
     public ResponseEntity<?> getProjects(@CookieValue(name = "token", required = false) String token, HttpServletResponse response) {
@@ -200,6 +203,37 @@ public class ProjectController {
         }
     }
 
-    
+    @GetMapping("tasks/{sprintId}")
+    public ResponseEntity<?> getTasks(@CookieValue(name = "token", required = false) String token, @PathVariable String sprintId) {
+        try {
+            return ResponseEntity.ok(projectService.getTasks(token, sprintId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PostMapping("tasks/{sprintId}")
+    public ResponseEntity<?> createTask(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String sprintId,
+        @RequestBody CreateTask createTask
+    ) {
+        try {
+            return ResponseEntity.ok(
+                projectService.createTask(
+                    token,
+                    sprintId,
+                    createTask.title(),
+                    createTask.description(),
+                    createTask.status(),
+                    createTask.priority(),
+                    createTask.userStoryId(),
+                    createTask.responsableId()
+                )
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
 
 }
