@@ -548,4 +548,34 @@ public class ProjectService {
 
         taskRepository.delete(task);
     }
+
+    public Task updateTaskStatus(
+        String token,
+        String taskId,
+        TaskStatus status
+    ) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID taskUUID = UUID.fromString(taskId);
+
+        Task task = taskRepository.findById(taskUUID)
+            .orElseThrow(() -> new BadCredentialsException("Task not found"));
+
+        // Verifica se o usuário é membro do projeto (qualquer role)
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(task.getSprint().getProject().getProjectId());
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+
+        if (foundUser.isEmpty()) {
+            throw new Exception("User is not a member of the project");
+        }
+
+        // Atualiza apenas o status
+        if (status != null) {
+            task.setStatus(status);
+            task.setUpdatedAt(LocalDateTime.now());
+        }
+
+        return taskRepository.save(task);
+    }
 }   

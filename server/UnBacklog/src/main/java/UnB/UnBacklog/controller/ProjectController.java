@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -44,6 +45,7 @@ public class ProjectController {
     public record CreateSprint(String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status ){}
     public record UpdateSprint( String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status) {}
     public record CreateTask(String title,String description,TaskStatus status,TaskPriority priority, String userStoryId, String responsableId) {}
+    public record UpdateTaskStatus(TaskStatus status) {}
     public record UpdateTask(
     String title,
     String description,
@@ -276,6 +278,25 @@ public class ProjectController {
         try {
             projectService.deleteTask(token, taskId);
             return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PatchMapping("tasks/{taskId}/status")
+    public ResponseEntity<?> updateTaskStatus(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String taskId,
+        @RequestBody UpdateTaskStatus updateTaskStatus
+    ) {
+        try {
+            return ResponseEntity.ok(
+                projectService.updateTaskStatus(
+                    token,
+                    taskId,
+                    updateTaskStatus.status()
+                )
+            );
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
