@@ -38,6 +38,7 @@ public class UserStory {
 
     @ManyToOne
     @JoinColumn(name = "sprint_id")
+    @JsonIgnore
     private Sprint sprint;
     
     @ManyToOne

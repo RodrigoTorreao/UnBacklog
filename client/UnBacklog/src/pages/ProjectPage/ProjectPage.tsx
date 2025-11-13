@@ -5,7 +5,8 @@ import styles from "./ProjectPage.module.css";
 import { useProject } from "../../context/ProjectContext";
 import OverviewTab from "../../components/OverviewTab";
 import UserStoryTab from "../../components/UserStoryTab";
-import { getUserStory } from "../../api/projectApi";
+import SprintsTab from "../../components/SprintsTab";
+import { getUserStory, getSprints } from "../../api/projectApi";
 
 const tabMap: Map<string, number> = new Map([
   ["OVERVIEW", 0],
@@ -15,28 +16,53 @@ const tabMap: Map<string, number> = new Map([
 ]);
 
 const ProjectPage: React.FC = () => {
-  const { project, setProject } = useProject();
+  const { project, updateUserStories, updateSprints } = useProject();
   const [selectedTab, setSelectedTab] = useState(tabMap.get("OVERVIEW"));
+  const [hasLoadedStories, setHasLoadedStories] = useState(false);
+  const [hasLoadedSprints, setHasLoadedSprints] = useState(false);
 
+  // useEffect para User Stories - executa apenas uma vez quando o project.id estiver disponível
   useEffect(() => {
     const fetchUserStory = async () => {
-      if (!project.id) {
-        console.error("Cannot fetch user story: project ID is undefined");
+      if (!project.id || hasLoadedStories) {
         return;
       }
       try {
         const response = await getUserStory(project.id);
-        setProject({
-          ...project,
-          userStories: response.data,
-        });
+        updateUserStories(response.data);
+        setHasLoadedStories(true);
       } catch (error) {
+        console.error("Erro ao buscar user stories:", error);
         alert("Erro ao buscar user stories");
       }
     };
 
     fetchUserStory();
-  }, [project.id]);
+  }, [project.id, hasLoadedStories, updateUserStories]);
+
+  // useEffect para Sprints - executa apenas uma vez quando o project.id estiver disponível
+  useEffect(() => {
+    const fetchSprints = async () => {
+      if (!project.id || hasLoadedSprints) {
+        return;
+      }
+      try {
+        const response = await getSprints(project.id);
+        const formattedSprints = response.data.map((sprint: { sprintId: any; }) => ({
+          ...sprint,
+          id: sprint.sprintId
+        }));
+        updateSprints(formattedSprints);
+        setHasLoadedSprints(true);
+      } catch (error) {
+        console.error("Erro ao buscar sprints:", error);
+        alert("Erro ao buscar sprints");
+      }
+    };
+
+    fetchSprints();
+    console.log(project)
+  }, [project.id, hasLoadedSprints, updateSprints]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
@@ -48,8 +74,10 @@ const ProjectPage: React.FC = () => {
         return <OverviewTab />;
       case tabMap.get("USER_STORIES"):
         return <UserStoryTab />;
+      case tabMap.get("SPRINTS"):
+        return <SprintsTab />;
       default:
-        return <h1>Ola</h1>;
+        return <h1>Olá</h1>;
     }
   };
 

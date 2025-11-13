@@ -1,6 +1,7 @@
 package UnB.UnBacklog.service;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,14 +13,17 @@ import UnB.UnBacklog.controller.ProjectController.Associate;
 import UnB.UnBacklog.dto.ProjectUserDTO;
 import UnB.UnBacklog.entities.Project;
 import UnB.UnBacklog.entities.ProjectUser;
+import UnB.UnBacklog.entities.Sprint;
 import UnB.UnBacklog.entities.User;
 import UnB.UnBacklog.entities.UserStory;
 import UnB.UnBacklog.repository.ProjectRepository;
+import UnB.UnBacklog.repository.SprintRepository;
 import UnB.UnBacklog.repository.UserRepository;
 import UnB.UnBacklog.repository.UserStoryRepository;
 import UnB.UnBacklog.service.ProjectService.ProjectResponse;
 import UnB.UnBacklog.service.ProjectService.UserSummary;
 import UnB.UnBacklog.util.ProjectRole;
+import UnB.UnBacklog.util.SprintStatus;
 import UnB.UnBacklog.util.UserStoryPriority;
 import UnB.UnBacklog.util.UserStoryStatus;
 import UnB.UnBacklog.util.Utils;
@@ -31,6 +35,7 @@ public class ProjectService {
     private ProjectRepository projectRepository;
     private UserRepository userRepository;
     private Utils utils; 
+    private SprintRepository sprintRepository; 
 
     public record ProjectResponse(
     UUID id,
@@ -46,11 +51,12 @@ public class ProjectService {
         ProjectRole role
     ) {}
 
-    public ProjectService(ProjectRepository projectRepository, Utils utils, UserRepository userRepository, UserStoryRepository userStoryRepository){
+    public ProjectService(ProjectRepository projectRepository, Utils utils, UserRepository userRepository, UserStoryRepository userStoryRepository, SprintRepository sprintRepository){
         this.projectRepository = projectRepository;
         this.utils = utils;
         this.userRepository = userRepository; 
         this.userStoryRepository = userStoryRepository;
+        this.sprintRepository = sprintRepository; 
     }
 
     public List<ProjectResponse> getProjects(String token){
@@ -146,12 +152,14 @@ public class ProjectService {
         String title, 
         String description, 
         UserStoryPriority priority, 
-        UserStoryStatus status
+        UserStoryStatus status,
+        String sprintId
     ) throws Exception {
 
         UUID userId = utils.getUserIdByToken(token);
         UUID projectUUID = UUID.fromString(projectId);
         UUID userStoryUUID = UUID.fromString(userStoryId);
+        UUID sprintUUID = UUID.fromString(sprintId);
 
         List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
         Optional<ProjectUserDTO> foundUser = projectUsers.stream()
@@ -172,6 +180,11 @@ public class ProjectService {
         if (description != null) userStory.setDescription(description);
         if (priority != null) userStory.setPriority(priority);
         if (status != null) userStory.setStatus(status);
+        if (sprintId != null){
+            Sprint sprint = sprintRepository.findById(sprintUUID)
+             .orElseThrow(() -> new BadCredentialsException("Sprint not Found"));
+            userStory.setSprint(sprint);
+        }
 
         return userStoryRepository.save(userStory);
     }
@@ -198,5 +211,166 @@ public class ProjectService {
 
         userStoryRepository.delete(userStory);
 
+    }
+
+    public Sprint createSprint(
+        String token, 
+        String projectId, 
+        String sprintObjective, 
+        LocalDateTime startDate, 
+        LocalDateTime finishDate, 
+        SprintStatus status
+    ) throws Exception {
+
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        Project project = projectRepository.findById(projectUUID)
+            .orElseThrow(() -> new BadCredentialsException("Project not found"));
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(projectUser -> projectUser.getUserId().equals(userId))
+            .findFirst(); 
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Product Owners can create sprints");
+        }
+
+        if (startDate == null || finishDate == null) {
+            status = SprintStatus.PLANNED;
+        } 
+
+        else {
+            LocalDateTime today = LocalDateTime.now();
+
+            if (startDate.isBefore(today)) {
+                throw new Exception("Start date cannot be before today");
+            }
+            if (finishDate.isBefore(startDate)) {
+                throw new Exception("Finish date cannot be before start date");
+            }
+        }
+
+        if (status == SprintStatus.ACTIVE) {
+            Optional<Sprint> activeSprint = project.getSprints().stream()
+                .filter(sprint -> sprint.getStatus() == SprintStatus.ACTIVE)
+                .findFirst();
+
+            if (activeSprint.isPresent()) {
+                Sprint existing = activeSprint.get();
+                existing.setStatus(SprintStatus.COMPLETED);
+                sprintRepository.save(existing);
+            }
+        }
+
+        Sprint newSprint = new Sprint();
+        newSprint.setObjective(sprintObjective);
+        newSprint.setProject(project);
+        newSprint.setStartDate(startDate);
+        newSprint.setFinishDate(finishDate);
+        newSprint.setStatus(status);
+
+        return sprintRepository.save(newSprint);
+    }
+
+    public List<Sprint> getSprints(String token, String projectId) throws Exception{
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        Project project = projectRepository.findById(projectUUID)
+            .orElseThrow(() -> new BadCredentialsException("Project not found"));
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(projectUser -> projectUser.getUserId().equals(userId))
+            .findFirst(); 
+
+        if (foundUser.isEmpty()) {
+            throw new Exception("User not part of project");
+        }
+        return project.getSprints(); 
+
+    }
+
+    public Sprint updateSprint(
+        String token,
+        String projectId,
+        String sprintId,
+        String objective,
+        LocalDateTime startDate,
+        LocalDateTime finishDate,
+        SprintStatus status
+    ) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        UUID sprintUUID = UUID.fromString(sprintId);
+
+        // Verifica se o usuário é Product Owner
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Product Owners can update sprints");
+        }
+
+        Sprint sprint = sprintRepository.findById(sprintUUID)
+            .orElseThrow(() -> new BadCredentialsException("Sprint not found"));
+
+        if (!sprint.getProject().getProjectId().equals(projectUUID)) {
+            throw new Exception("Sprint does not belong to this project");
+        }
+
+        // Atualizações simples
+        if (objective != null) sprint.setObjective(objective);
+        if (startDate != null) sprint.setStartDate(startDate);
+        if (finishDate != null) sprint.setFinishDate(finishDate);
+
+        // Caso o status seja alterado para ACTIVE
+        if (status == SprintStatus.ACTIVE && sprint.getStatus() != SprintStatus.ACTIVE) {
+            // Desativa qualquer outra sprint ativa
+            List<Sprint> sprints = sprint.getProject().getSprints();
+            for (Sprint s : sprints) {
+                if (!s.getSprintId().equals(sprint.getSprintId()) && s.getStatus() == SprintStatus.ACTIVE) {
+                    s.setStatus(SprintStatus.COMPLETED);
+                    sprintRepository.save(s);
+                }
+            }
+            sprint.setStatus(SprintStatus.ACTIVE);
+        } 
+        else if (status != null) {
+            sprint.setStatus(status);
+        }
+
+        return sprintRepository.save(sprint);
+    }
+
+    public void deleteSprint(String token, String projectId, String sprintId) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID projectUUID = UUID.fromString(projectId);
+        UUID sprintUUID = UUID.fromString(sprintId);
+
+        // Verifica se o usuário é Product Owner
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(projectUUID);
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Product Owners can delete sprints");
+        }
+
+        Sprint sprint = sprintRepository.findById(sprintUUID)
+            .orElseThrow(() -> new BadCredentialsException("Sprint not found"));
+
+        if (!sprint.getProject().getProjectId().equals(projectUUID)) {
+            throw new Exception("Sprint does not belong to this project");
+        }
+
+        if (sprint.getStatus() != SprintStatus.PLANNED) {
+            throw new Exception("Only planned sprints can be deleted");
+        }
+
+        sprintRepository.delete(sprint);
     }
 }   

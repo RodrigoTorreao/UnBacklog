@@ -37,4 +37,21 @@ export interface  ProjectType {
     description?: string;
     associates?: Associates[];
     userStories?: UserStory[];
+    sprints?: Sprint[];
+}
+
+export const SprintStatus = {
+  PLANNED: "PLANNED",
+  ACTIVE: "ACTIVE",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export type SprintStatus = typeof SprintStatus[keyof typeof SprintStatus];
+
+export interface Sprint {
+  id?: string;
+  objective: string;
+  startDate?: string;
+  finishDate?: string;
+  status: SprintStatus;
 }

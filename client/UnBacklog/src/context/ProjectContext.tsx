@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from "react";
-import { type UserStory, type ProjectType } from "../types/types";
+import { createContext, useContext, useState, useCallback } from "react";
+import { type UserStory, type ProjectType, type Sprint } from "../types/types";
 
 interface ProjectContextType {
   project: ProjectType;
@@ -7,6 +7,10 @@ interface ProjectContextType {
   updateUserStories: (stories: UserStory[]) => void;
   addUserStory: (story: UserStory) => void;
   deleteUserStory: (storyId: string) => void;
+  updateSprints: (sprints: Sprint[]) => void;
+  addSprint: (sprint: Sprint) => void;
+  deleteSprint: (sprintId: string) => void;
+  updateUserStory:(userStory: UserStory) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -15,28 +19,70 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [project, setProject] = useState<ProjectType>({
     associates: [],
     userStories: [],
+    sprints: [],
   });
 
-  const updateUserStories = (stories: UserStory[]) => {
+  // --- User Stories ---
+  const updateUserStories = useCallback((stories: UserStory[]) => {
     setProject(prev => ({ ...prev, userStories: stories }));
-  };
+  }, []);
 
-  const addUserStory = (story: UserStory) => {
+  const addUserStory = useCallback((story: UserStory) => {
     setProject(prev => ({
       ...prev,
       userStories: [...(prev.userStories || []), story],
     }));
-  };
+  }, []);
 
-  const deleteUserStory = (storyId: string) => {
+  const deleteUserStory = useCallback((storyId: string) => {
     setProject(prev => ({
       ...prev,
       userStories: prev.userStories?.filter(story => story.id !== storyId) || [],
     }));
-  };
+  }, []);
+
+  const updateUserStory = useCallback((updatedStory: UserStory) => {
+  setProject(prev => ({
+    ...prev,
+    userStories: prev.userStories?.map(story => 
+      story.id === updatedStory.id ? updatedStory : story
+    ) || [],
+  }));
+}, []);
+
+  // --- Sprints ---
+  const updateSprints = useCallback((sprints: Sprint[]) => {
+    setProject(prev => ({ ...prev, sprints }));
+  }, []);
+
+  const addSprint = useCallback((sprint: Sprint) => {
+    setProject(prev => ({
+      ...prev,
+      sprints: [...(prev.sprints || []), sprint],
+    }));
+  }, []);
+
+  const deleteSprint = useCallback((sprintId: string) => {
+    setProject(prev => ({
+      ...prev,
+      sprints: prev.sprints?.filter(sprint => sprint.id !== sprintId) || [],
+    }));
+  }, []);
 
   return (
-    <ProjectContext.Provider value={{ project, setProject, updateUserStories, addUserStory, deleteUserStory }}>
+    <ProjectContext.Provider
+      value={{
+        project,
+        setProject,
+        updateUserStories,
+        addUserStory,
+        deleteUserStory,
+        updateSprints,
+        addSprint,
+        deleteSprint,
+        updateUserStory
+      }}
+    >
       {children}
     </ProjectContext.Provider>
   );
