@@ -1,5 +1,5 @@
 import api from "./api";
-import { roleMap, type Associates, UserStoryPriority, UserStoryStatus, type UserStory, type Sprint} from "../types/types";
+import { roleMap, type Associates, UserStoryPriority, UserStoryStatus, type UserStory, type Sprint, TaskStatus, TaskPriority} from "../types/types";
 
 interface createProjectBody { 
     name: string,
@@ -47,4 +47,19 @@ export const deleteSprint = (projectId: string, sprintId: string) => {
 
 export const updateUserStory = (projectId: string, userStoryId: string, body: Partial<UserStory> & { sprintId?: string }) => {
   return api.put(`/project/${projectId}/user-story/${userStoryId}`, body);
+};
+
+export const getTasks = (sprintId: string) => {
+  return api.get(`/project/tasks/${sprintId}`);
+};
+
+export const createTask = (sprintId: string, body: {
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  userStoryId?: string;
+  responsableId?: string;
+}) => {
+  return api.post(`/project/tasks/${sprintId}`, body);
 };

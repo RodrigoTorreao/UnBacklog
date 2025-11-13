@@ -55,3 +55,29 @@ export interface Sprint {
   finishDate?: string;
   status: SprintStatus;
 }
+
+export const TaskStatus = {
+  TO_DO: "TO_DO",
+  DOING: "DOING", 
+  DONE: "DONE",
+} as const;
+
+export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
+
+export const TaskPriority = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const;
+
+export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
+
+export interface Task {
+  id?: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  userStoryId?: string;
+  sprintId?: string;
+}

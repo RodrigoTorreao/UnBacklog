@@ -7,6 +7,7 @@ import OverviewTab from "../../components/OverviewTab";
 import UserStoryTab from "../../components/UserStoryTab";
 import SprintsTab from "../../components/SprintsTab";
 import { getUserStory, getSprints } from "../../api/projectApi";
+import KanbanTab from "../../components/KanbanTab";
 
 const tabMap: Map<string, number> = new Map([
   ["OVERVIEW", 0],
@@ -21,7 +22,6 @@ const ProjectPage: React.FC = () => {
   const [hasLoadedStories, setHasLoadedStories] = useState(false);
   const [hasLoadedSprints, setHasLoadedSprints] = useState(false);
 
-  // useEffect para User Stories - executa apenas uma vez quando o project.id estiver disponível
   useEffect(() => {
     const fetchUserStory = async () => {
       if (!project.id || hasLoadedStories) {
@@ -40,7 +40,6 @@ const ProjectPage: React.FC = () => {
     fetchUserStory();
   }, [project.id, hasLoadedStories, updateUserStories]);
 
-  // useEffect para Sprints - executa apenas uma vez quando o project.id estiver disponível
   useEffect(() => {
     const fetchSprints = async () => {
       if (!project.id || hasLoadedSprints) {
@@ -76,6 +75,8 @@ const ProjectPage: React.FC = () => {
         return <UserStoryTab />;
       case tabMap.get("SPRINTS"):
         return <SprintsTab />;
+      case tabMap.get("KANBAN"):
+        return <KanbanTab />;
       default:
         return <h1>Olá</h1>;
     }
