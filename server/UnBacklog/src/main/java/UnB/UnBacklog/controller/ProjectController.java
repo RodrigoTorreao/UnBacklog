@@ -44,6 +44,14 @@ public class ProjectController {
     public record CreateSprint(String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status ){}
     public record UpdateSprint( String objective, LocalDateTime startDate, LocalDateTime finishDate, SprintStatus status) {}
     public record CreateTask(String title,String description,TaskStatus status,TaskPriority priority, String userStoryId, String responsableId) {}
+    public record UpdateTask(
+    String title,
+    String description,
+    TaskStatus status,
+    TaskPriority priority,
+    String userStoryId,  // Opcional - pode ser null para remover associação
+    String responsableId // Opcional - pode ser null para remover responsável
+) {}
 
     @GetMapping()
     public ResponseEntity<?> getProjects(@CookieValue(name = "token", required = false) String token, HttpServletResponse response) {
@@ -235,5 +243,43 @@ public class ProjectController {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
+
+    @PutMapping("tasks/{taskId}")
+    public ResponseEntity<?> updateTask(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String taskId,
+        @RequestBody UpdateTask updateTask
+    ) {
+        try {
+            return ResponseEntity.ok(
+                projectService.updateTask(
+                    token,
+                    taskId,
+                    updateTask.title(),
+                    updateTask.description(),
+                    updateTask.status(),
+                    updateTask.priority(),
+                    updateTask.userStoryId(),
+                    updateTask.responsableId()
+                )
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("tasks/{taskId}")
+    public ResponseEntity<?> deleteTask(
+        @CookieValue(name = "token", required = false) String token,
+        @PathVariable String taskId
+    ) {
+        try {
+            projectService.deleteTask(token, taskId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
 
 }

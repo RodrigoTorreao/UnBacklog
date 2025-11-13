@@ -455,7 +455,97 @@ public class ProjectService {
             
             task.setResponsable(responsable);
         }
-        
+
         return taskRepository.save(task);
+    }
+
+    public Task updateTask(
+        String token,
+        String taskId,
+        String title,
+        String description,
+        TaskStatus status,
+        TaskPriority priority,
+        String userStoryId,
+        String responsableId
+    ) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID taskUUID = UUID.fromString(taskId);
+
+        Task task = taskRepository.findById(taskUUID)
+            .orElseThrow(() -> new BadCredentialsException("Task not found"));
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(task.getSprint().getProject().getProjectId());
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Project Owners can update tasks");
+        }
+
+        if (title != null) task.setTitle(title);
+        if (description != null) task.setDescription(description);
+        if (status != null) task.setStatus(status);
+        if (priority != null) task.setPriority(priority);
+        task.setUpdatedAt(LocalDateTime.now());
+
+        if (userStoryId != null) {
+            if (userStoryId.isEmpty()) {
+                task.setUserStory(null);
+            } else {
+                UUID userStoryUUID = UUID.fromString(userStoryId);
+                UserStory userStory = userStoryRepository.findById(userStoryUUID)
+                    .orElseThrow(() -> new BadCredentialsException("User Story not found"));
+                
+                // Verifica se a User Story pertence ao mesmo projeto
+                if (!userStory.getProject().getProjectId().equals(task.getSprint().getProject().getProjectId())) {
+                    throw new Exception("User Story does not belong to the same project");
+                }
+                
+                task.setUserStory(userStory);
+            }
+        }
+
+        if (responsableId != null) {
+            if (responsableId.isEmpty()) {
+                task.setResponsable(null);
+            } else {
+                UUID responsableUUID = UUID.fromString(responsableId);
+                User responsable = userRepository.findById(responsableUUID)
+                    .orElseThrow(() -> new BadCredentialsException("Responsable not found"));
+                
+                // Verifica se o responsável é membro do projeto
+                boolean isResponsableInProject = projectUsers.stream()
+                    .anyMatch(p -> p.getUserId().equals(responsableUUID));
+                
+                if (!isResponsableInProject) {
+                    throw new Exception("Responsable is not a member of the project");
+                }
+                
+                task.setResponsable(responsable);
+            }
+        }
+
+        return taskRepository.save(task);
+    }
+
+    public void deleteTask(String token, String taskId) throws Exception {
+        UUID userId = utils.getUserIdByToken(token);
+        UUID taskUUID = UUID.fromString(taskId);
+
+        Task task = taskRepository.findById(taskUUID)
+            .orElseThrow(() -> new BadCredentialsException("Task not found"));
+
+        List<ProjectUserDTO> projectUsers = projectRepository.findUsersWithRolesByProjectId(task.getSprint().getProject().getProjectId());
+        Optional<ProjectUserDTO> foundUser = projectUsers.stream()
+            .filter(p -> p.getUserId().equals(userId))
+            .findFirst();
+
+        if (foundUser.isEmpty() || foundUser.get().getRole() != ProjectRole.PRODUCT_OWNER) {
+            throw new Exception("Only Project Owners can delete tasks");
+        }
+
+        taskRepository.delete(task);
     }
 }   
