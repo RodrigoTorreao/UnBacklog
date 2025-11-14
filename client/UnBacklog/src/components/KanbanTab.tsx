@@ -13,6 +13,7 @@ import {
   Chip,
 } from "@mui/material";
 import CreateTaskModal from "./CreateTaskModal";
+import KanbanBoard from "./KanbanBoard";
 
 const KanbanTab: React.FC = () => {
   const { project } = useProject();
@@ -26,6 +27,7 @@ const KanbanTab: React.FC = () => {
   );
 
   // Buscar tasks quando a sprint ativa mudar
+// No KanbanTab.tsx, vamos adicionar um log para debug
   const fetchTasks = async () => {
     if (!activeSprint?.id) {
       setLoading(false);
@@ -35,7 +37,15 @@ const KanbanTab: React.FC = () => {
     try {
       setLoading(true);
       const response = await getTasks(activeSprint.id);
-      setTasks(response.data);
+      
+      // Mapear taskId para id se necessário
+      const mappedTasks = response.data.map((task: any) => ({
+        ...task,
+        id: task.taskId || task.id // Usa taskId se existir, senão usa id
+      }));
+      
+      console.log("Tasks mapeadas:", mappedTasks); // Debug
+      setTasks(mappedTasks);
     } catch (error) {
       console.error("Erro ao buscar tasks:", error);
     } finally {
@@ -73,6 +83,12 @@ const KanbanTab: React.FC = () => {
 
   const handleTaskCreated = () => {
     fetchTasks(); // Recarrega as tasks
+  };
+
+  const handleTaskUpdate = (updatedTask: Task) => {
+    setTasks(prev => prev.map(task => 
+      task.id === updatedTask.id ? updatedTask : task
+    ));
   };
 
   if (loading) {
@@ -274,47 +290,40 @@ const KanbanTab: React.FC = () => {
         )}
       </Box>
 
-      {/* Espaço do Kanban (placeholder para implementação futura) */}
+      {/* Quadro Kanban */}
       <Box sx={{ marginBottom: 4 }}>
-        <Typography 
-          variant="h5" 
-          sx={{ 
-            color: "#0c1d14",
-            fontWeight: 600,
-            marginBottom: 2,
-            fontSize: "1.5rem"
-          }}
-        >
-          Quadro Kanban
-        </Typography>
-        
-        <Box
-          sx={{
-            padding: "40px",
-            backgroundColor: "#f9f9f9",
-            borderRadius: "10px",
-            border: "2px dashed #e6f4ed",
-            textAlign: "center"
-          }}
-        >
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: 3 
+        }}>
           <Typography 
-            variant="body1" 
+            variant="h5" 
             sx={{ 
-              color: "#666",
-              marginBottom: 2
+              color: "#0c1d14",
+              fontWeight: 600,
+              fontSize: "1.5rem"
             }}
           >
-            O quadro Kanban será implementado em breve.
+            Quadro Kanban
           </Typography>
+          
           <Typography 
             variant="body2" 
             sx={{ 
-              color: "#888"
+              color: "#45a173",
+              fontWeight: 500
             }}
           >
-            Aqui serão exibidas as tasks organizadas por status (TO_DO, DOING, DONE).
+            Total: {tasks.length} tasks
           </Typography>
         </Box>
+        
+        <KanbanBoard 
+          tasks={tasks} 
+          onTaskUpdate={handleTaskUpdate}
+        />
       </Box>
 
       {/* Modal de criação de task */}

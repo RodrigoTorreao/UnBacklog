@@ -1,5 +1,5 @@
 import api from "./api";
-import { roleMap, type Associates, UserStoryPriority, UserStoryStatus, type UserStory, type Sprint, TaskStatus, TaskPriority} from "../types/types";
+import { roleMap, type Associates, UserStoryPriority, UserStoryStatus, type UserStory, type Sprint, TaskStatus, TaskPriority, type Task} from "../types/types";
 
 interface createProjectBody { 
     name: string,
@@ -62,4 +62,9 @@ export const createTask = (sprintId: string, body: {
   responsableId?: string;
 }) => {
   return api.post(`/project/tasks/${sprintId}`, body);
+};
+
+// projectApi.ts - Adicione esta função
+export const updateTask = (taskId: string, body: Partial<Task>) => {
+  return api.put(`/project/tasks/${taskId}`, body);
 };

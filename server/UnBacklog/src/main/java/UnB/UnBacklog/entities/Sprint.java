@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import UnB.UnBacklog.util.SprintStatus;
 import jakarta.persistence.CascadeType;
@@ -24,6 +26,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "sprint")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Sprint {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -41,16 +44,18 @@ public class Sprint {
 
     private LocalDateTime finishDate;
 
-   @Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "sprint", cascade = CascadeType.ALL)
+    @JsonManagedReference("sprint-userstories")
     private List<UserStory> userStories = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private SprintStatus status;
 
     @OneToMany(mappedBy = "sprint", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("sprint-tasks")
     private List<Task> tasks = new ArrayList<>();
     
     public UUID getSprintId() {

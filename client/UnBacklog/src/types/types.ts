@@ -72,6 +72,7 @@ export const TaskPriority = {
 
 export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
 
+// types.ts - Verificar se o tipo Task está correto
 export interface Task {
   id?: string;
   title: string;
@@ -80,4 +81,7 @@ export interface Task {
   priority: TaskPriority;
   userStoryId?: string;
   sprintId?: string;
-}
+  responsableId?: string;
+  // Adicione qualquer campo adicional que a API possa retornar
+  taskId?: string; // Caso a API use taskId em vez de id
+}; 

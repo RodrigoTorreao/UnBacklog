@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import UnB.UnBacklog.util.UserStoryPriority;
 import UnB.UnBacklog.util.UserStoryStatus;
@@ -19,11 +21,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "user_story")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class UserStory {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,15 +44,16 @@ public class UserStory {
 
     @ManyToOne
     @JoinColumn(name = "sprint_id")
-    @JsonIgnore
+    @JsonBackReference("sprint-userstories")
     private Sprint sprint;
     
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "project_id")
+    @JsonBackReference("project-userstories")
     private Project project;
 
     @OneToMany(mappedBy = "userStory", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("userstory-tasks")
     private List<Task> tasks = new ArrayList<>();
 
     
@@ -117,5 +120,4 @@ public class UserStory {
     public void setTasks(List<Task> tasks) {
         this.tasks = tasks;
     }
-
 }
