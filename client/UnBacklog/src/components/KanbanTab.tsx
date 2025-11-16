@@ -1,5 +1,5 @@
-// KanbanTab.tsx (atualizado)
-import React, { useEffect, useState } from "react";
+// KanbanTab.tsx (corrigido)
+import React, { useEffect, useState, useMemo } from "react";
 import { useProject } from "../context/ProjectContext";
 import { type Task, type UserStory, SprintStatus } from "../types/types";
 import { getTasks } from "../api/projectApi";
@@ -26,8 +26,24 @@ const KanbanTab: React.FC = () => {
     sprint => sprint.status === SprintStatus.ACTIVE
   );
 
+  // Mapear user stories para criar um mapa de taskId -> userStoryId
+  const taskToUserStoryMap = useMemo(() => {
+    const map = new Map<string, string>();
+    
+    if (!activeSprint?.userStories) return map;
+
+    activeSprint.userStories.forEach(userStory => {
+      userStory.tasks?.forEach(task => {
+        if (task.taskId) {
+          map.set(task.taskId, userStory.id!);
+        }
+      });
+    });
+
+    return map;
+  }, [activeSprint?.userStories]);
+
   // Buscar tasks quando a sprint ativa mudar
-// No KanbanTab.tsx, vamos adicionar um log para debug
   const fetchTasks = async () => {
     if (!activeSprint?.id) {
       setLoading(false);
@@ -38,13 +54,20 @@ const KanbanTab: React.FC = () => {
       setLoading(true);
       const response = await getTasks(activeSprint.id);
       
-      // Mapear taskId para id se necessário
-      const mappedTasks = response.data.map((task: any) => ({
-        ...task,
-        id: task.taskId || task.id // Usa taskId se existir, senão usa id
-      }));
+      // Mapear corretamente as tasks com userStoryId
+      const mappedTasks = response.data.map((task: any) => {
+        const userStoryId = taskToUserStoryMap.get(task.taskId);
+        
+        return {
+          ...task,
+          id: task.taskId, // Usar taskId como id
+          taskId: task.taskId, // Manter o taskId original
+          userStoryId: userStoryId, // Associar com a user story
+          responsableId: task.responsable?.userId // Extrair userId do responsável
+        };
+      });
       
-      console.log("Tasks mapeadas:", mappedTasks); // Debug
+      console.log("Tasks mapeadas com userStoryId:", mappedTasks);
       setTasks(mappedTasks);
     } catch (error) {
       console.error("Erro ao buscar tasks:", error);
@@ -55,12 +78,10 @@ const KanbanTab: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [activeSprint?.id]);
+  }, [activeSprint?.id, taskToUserStoryMap]);
 
   // Filtrar histórias de usuário da sprint ativa
-  const sprintUserStories = project.userStories?.filter(
-    story => story.sprint === activeSprint?.id
-  ) || [];
+  const sprintUserStories = activeSprint?.userStories || [];
 
   // Calcular porcentagem de completude
   const calculateCompletion = () => {
@@ -75,10 +96,11 @@ const KanbanTab: React.FC = () => {
 
   const completionPercentage = calculateCompletion();
 
-  // Contar tasks por história
+  // Contar tasks por história - AGORA CORRETO
   const getTaskCountForStory = (storyId?: string) => {
     if (!storyId) return 0;
-    return tasks.filter(task => task.userStoryId === storyId).length;
+    const userStory = sprintUserStories.find(story => story.id === storyId);
+    return userStory?.tasks?.length || 0;
   };
 
   const handleTaskCreated = () => {
@@ -94,7 +116,7 @@ const KanbanTab: React.FC = () => {
   if (loading) {
     return (
       <div style={{ fontFamily: 'Inter, "Noto Sans", sans-serif', padding: "20px" }}>
-        <Typography>Carregando...</Typography>
+        <Typography>Carregando tasks...</Typography>
       </div>
     );
   }

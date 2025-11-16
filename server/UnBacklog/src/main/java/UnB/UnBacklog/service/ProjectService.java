@@ -429,8 +429,7 @@ public class ProjectService {
         task.setPriority(priority);
         task.setSprint(sprint);
         task.setCreatedAt(LocalDateTime.now());
-        task.setUserStory(null);
-
+        
         UUID userStoryUUID = UUID.fromString(userStoryId);
         UserStory userStory = userStoryRepository.findById(userStoryUUID)
             .orElseThrow(() -> new BadCredentialsException("User Story not found"));
@@ -455,6 +454,8 @@ public class ProjectService {
             
             task.setResponsable(responsable);
         }
+
+        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 
         return taskRepository.save(task);
     }
